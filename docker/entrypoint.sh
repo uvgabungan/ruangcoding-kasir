@@ -34,6 +34,7 @@ php artisan tinker --execute="App\Models\User::updateOrCreate(['email' => 'admin
 echo "Setting up Filament Shield permissions..."
 php artisan shield:generate --all --no-interaction || true
 php artisan shield:super-admin --user=1 || true
+php artisan tinker --execute="\$role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']); \$u = \App\Models\User::where('email', 'admin@gmail.com')->first(); if (\$u) { \$u->assignRole(\$role); }" || true
 
 # Clear caches
 php artisan config:clear || true
