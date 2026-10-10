@@ -34,10 +34,10 @@ echo "Setting up Filament Shield permissions..."
 php artisan shield:generate --all --no-interaction || true
 php artisan shield:super-admin --user=1 || true
 
-# Optimize cache
-php artisan config:cache || true
-php artisan route:cache || true
-php artisan view:cache || true
+# Clear caches
+php artisan config:clear || true
+php artisan route:clear || true
+php artisan view:clear || true
 
 # Start php-fpm in background
 php-fpm -D
