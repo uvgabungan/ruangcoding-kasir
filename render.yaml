@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ruangcoding-kasir
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    envVars:
+      - key: APP_NAME
+        value: Kasir Ruang Coding
+      - key: APP_ENV
+        value: production
+      - key: APP_KEY
+        value: base64:avPjIy5XvwOD7VeojYlezL5BuDjtOXqHvJf/lT47VuE=
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database

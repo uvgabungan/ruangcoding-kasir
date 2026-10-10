@@ -1,25 +1,47 @@
 #!/bin/sh
 set -e
 
-# Cache config & route if APP_KEY is provided
-if [ -n "$APP_KEY" ]; then
-    php artisan config:cache || true
-    php artisan route:cache || true
-    php artisan view:cache || true
+# Default to sqlite if DB_CONNECTION is not set or set to sqlite
+if [ -z "$DB_CONNECTION" ] || [ "$DB_CONNECTION" = "sqlite" ]; then
+    export DB_CONNECTION=sqlite
+    export DB_DATABASE=/var/www/html/database/database.sqlite
+    if [ ! -f /var/www/html/database/database.sqlite ]; then
+        echo "Creating sqlite database..."
+        touch /var/www/html/database/database.sqlite
+    fi
 fi
 
-# Run storage link
-php artisan storage:link || true
+# Ensure storage directories exist with right permissions
+mkdir -p /var/www/html/storage/app/public/reports
+mkdir -p /var/www/html/storage/framework/sessions
+mkdir -p /var/www/html/storage/framework/views
+mkdir -p /var/www/html/storage/framework/cache
+mkdir -p /var/www/html/bootstrap/cache
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
+chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
 
-# Run migrations if configured
-if [ "$RUN_MIGRATIONS" = "true" ]; then
-    echo "Running migrations..."
-    php artisan migrate --force || true
-fi
+# Link storage
+php artisan storage:link --force || true
+
+# Run migrations and setup database automatically
+echo "Running migrations..."
+php artisan migrate --force || true
+
+echo "Checking and seeding default data..."
+php artisan db:seed --force || true
+
+echo "Setting up Filament Shield permissions..."
+php artisan shield:generate --all --no-interaction || true
+php artisan shield:super-admin --user=1 || true
+
+# Optimize cache
+php artisan config:cache || true
+php artisan route:cache || true
+php artisan view:cache || true
 
 # Start php-fpm in background
 php-fpm -D
 
 # Start Nginx in foreground
-echo "Starting Nginx on port 80..."
+echo "Nginx starting on port 80..."
 exec nginx -g "daemon off;"
