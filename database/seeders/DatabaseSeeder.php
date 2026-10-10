@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Setting;
+use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,18 +15,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-    // Create a user with a specific role
-        \App\Models\User::factory()->create([
-            'name' => 'Owner Toko',
-            'email' => 'admin@gmail.com',
-            'password' => bcrypt('admin123')
-        ]); // you can use a more secure approach
+        // Pastikan user admin selalu ada dengan password 'admin123'
+        User::updateOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'Owner Toko',
+                'password' => 'admin123',
+            ]
+        );
 
-        $this->call([
-            SettingSeeder::class,
-            CategorySeeder::class,
-            ProductSeeder::class,
-        ]);
+        if (Setting::count() === 0) {
+            $this->call(SettingSeeder::class);
+        }
 
+        if (Category::count() === 0) {
+            $this->call(CategorySeeder::class);
+        }
+
+        if (Product::count() === 0) {
+            $this->call(ProductSeeder::class);
+        }
     }
 }

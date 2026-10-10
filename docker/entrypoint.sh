@@ -29,6 +29,7 @@ php artisan migrate --force || true
 
 echo "Checking and seeding default data..."
 php artisan db:seed --force || true
+php artisan tinker --execute="App\Models\User::updateOrCreate(['email' => 'admin@gmail.com'], ['name' => 'Owner Toko', 'password' => 'admin123']);" || true
 
 echo "Setting up Filament Shield permissions..."
 php artisan shield:generate --all --no-interaction || true
