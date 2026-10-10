@@ -36,6 +36,10 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+# Set default env during build
+ENV APP_KEY="base64:avPjIy5XvwOD7VeojYlezL5BuDjtOXqHvJf/lT47VuE="
+ENV DB_CONNECTION="sqlite"
+
 # Copy source code
 COPY . .
 
@@ -47,7 +51,7 @@ COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 
 # Setup permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database \
     && chmod +x docker/entrypoint.sh
 
 EXPOSE 80
