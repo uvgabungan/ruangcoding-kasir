@@ -74,6 +74,7 @@ class SettingResource extends Resource implements HasShieldPermissions
                     ->hidden(fn (Get $get) => $get('print_via_bluetooth') == true), // Disembunyikan jika print_via_mobile bernilai true
                 Forms\Components\FileUpload::make('logo')
                     ->image()
+                    ->disk(env('FILESYSTEM_DISK', 's3'))
                     ->required()
                     ->helperText('Pastikan format gambar adalah PNG')
                     ->directory('images')
