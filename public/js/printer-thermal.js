@@ -15,25 +15,43 @@ if (connectButton) {
 // fungsi ini untuk mencari jaringan printer bluetooth
 async function getPrinter() {
     try {
-        const device = await navigator.bluetooth.requestDevice({
-            filters: [{
-                    namePrefix: "RPP"
-                },
-                {
-                    namePrefix: "Thermal"
-                },
-                {
-                    namePrefix: "POS"
-                }
-            ],
-            optionalServices: ["000018f0-0000-1000-8000-00805f9b34fb"]
-        });
+        let device = null;
+        try {
+            // Coba dengan acceptAllDevices agar semua printer thermal (RPP, POS, Thermal, MTP, Panda, Iware, dll) terbaca
+            device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: [
+                    "000018f0-0000-1000-8000-00805f9b34fb",
+                    "0000e7b0-0000-1000-8000-00805f9b34fb"
+                ]
+            });
+        } catch (err) {
+            // Fallback dengan daftar prefix umum
+            device = await navigator.bluetooth.requestDevice({
+                filters: [
+                    { namePrefix: "RPP" },
+                    { namePrefix: "Thermal" },
+                    { namePrefix: "POS" },
+                    { namePrefix: "MTP" },
+                    { namePrefix: "PT" },
+                    { namePrefix: "MP" },
+                    { namePrefix: "Printer" },
+                    { namePrefix: "Bluetooth" }
+                ],
+                optionalServices: ["000018f0-0000-1000-8000-00805f9b34fb"]
+            });
+        }
 
-        alert("Perangkat berhasil tersambung:", device.name);
-        return device;
+        if (device) {
+            alert("Perangkat berhasil tersambung: " + (device.name || "Printer Bluetooth"));
+            return device;
+        }
+        return null;
     } catch (e) {
-        alert("Perangkat gagal tersambung");
-        console.error("Perangkat gagal tersambung, Erorr :", e);
+        if (e.name !== 'NotFoundError') {
+            alert("Perangkat gagal tersambung: " + (e.message || "Pastikan Bluetooth aktif"));
+        }
+        console.error("Perangkat gagal tersambung, Error :", e);
         return null;
     }
 }
