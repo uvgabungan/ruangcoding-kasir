@@ -223,7 +223,7 @@ class Pos extends Component implements HasForms
                     'price' => $product->price,
                     'cost_price' => $product->cost_price,
                     'total_profit' => $product->price - $product->cost_price,
-                    'image_url' => $product->image,
+                    'image_url' => $product->image_url,
                     'quantity' => 1,
                 ];
             }

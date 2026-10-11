@@ -31,7 +31,7 @@
                 @foreach ($products as $item)
                     <div wire:click="addToOrder({{ $item->id }})"
                         class="bg-white dark:bg-gray-700 p-2 rounded-lg border dark:border-none shadow cursor-pointer">
-                        <img src="{{ asset('storage/' . $item->image) }}" alt="Product Image"
+                        <img src="{{ $item->image_url }}" alt="Product Image"
                             class="w-full h-24 object-cover shadow  border rounded-lg mb-2">
                         <h3 class="text-sm font-semibold">{{ $item->name }}</h3>
                         <p class="text-gray-600 dark:text-gray-400 text-sm">Rp.
@@ -65,7 +65,7 @@
                 <div class="mb-4 ">
                     <div class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
                         <div class="flex items-center">
-                            <img src="{{ asset('storage/' . $item['image_url']) }}" alt="Product Image"
+                            <img src="{{ $item['image_url'] }}" alt="Product Image"
                                 class="w-10 h-10 object-cover rounded-lg mr-2">
                             <div class="px-2">
                                 <h3 class="text-xs line-clamp-2 font-semibold">{{ $item['name'] }}</h3>

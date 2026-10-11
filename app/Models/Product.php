@@ -25,4 +25,17 @@ class Product extends Model
     {
         return $this->hasMany(TransactionItem::class);
     }
+
+    public function getImageUrlAttribute()
+    {
+        if (!$this->image) {
+            return asset('images/product-default.jpg');
+        }
+
+        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
+            return $this->image;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'))->url($this->image);
+    }
 }
