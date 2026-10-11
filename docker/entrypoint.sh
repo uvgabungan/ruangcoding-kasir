@@ -55,9 +55,13 @@ php artisan shield:super-admin --user=1 || true
 php artisan tinker --execute="\$role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']); \$u = \App\Models\User::where('email', 'admin@gmail.com')->first(); if (\$u) { \$u->assignRole(\$role); }" || true
 
 # Clear caches
-php artisan config:clear || true
-php artisan route:clear || true
-php artisan view:clear || true
+# Final ownership and permissions fix after all artisan commands run as root
+mkdir -p /var/www/html/storage/logs
+touch /var/www/html/storage/logs/laravel.log
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/www/html/.env
+chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
+chmod 666 /var/www/html/storage/logs/laravel.log 2>/dev/null || true
+chmod 666 /var/www/html/database/database.sqlite 2>/dev/null || true
 
 # Start php-fpm in background
 php-fpm -D
