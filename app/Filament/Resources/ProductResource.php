@@ -80,7 +80,7 @@ class ProductResource extends Resource implements HasShieldPermissions
                     ->prefix('Rp'),
                 Forms\Components\FileUpload::make('image')
                     ->label('Gambar Produk')
-                    ->disk(env('FILESYSTEM_DISK', 's3'))
+                    ->disk('s3')
                     ->directory('products')
                     ->helperText('jika tidak diisi akan diisi foto default')
                     ->image(),
@@ -119,7 +119,7 @@ class ProductResource extends Resource implements HasShieldPermissions
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Gambar')
-                    ->disk(env('FILESYSTEM_DISK', 's3'))
+                    ->disk('s3')
                     ->circular(),
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stok')
