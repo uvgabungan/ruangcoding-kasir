@@ -122,8 +122,9 @@ class ReportResource extends Resource implements HasShieldPermissions
                 Tables\Actions\Action::make('download')
                 ->label('Download') // Label di tombol
                 ->icon('heroicon-m-arrow-down-tray') // Icon download dari Heroicons
-                ->color('primary') // Warna tombol (biru)
-                ->url(fn ($record) => asset('storage/' . $record->path_file))
+                ->url(fn ($record) => config('filesystems.default') === 's3'
+                    ? \Illuminate\Support\Facades\Storage::disk('s3')->url($record->path_file)
+                    : asset('storage/' . $record->path_file))
                 ->openUrlInNewTab(true), // Membuka URL di tab baru,
                 Tables\Actions\EditAction::make(),
             ])

@@ -69,15 +69,17 @@ class ReportObserver
                 ])->setPaper('a4', 'portrait');
             }
 
-            // Pastikan folder 'storage/app/public/reports' ada
-            $pathDirectory = storage_path('app/public/reports');
-            if (!file_exists($pathDirectory)) {
-                mkdir($pathDirectory, 0755, true);
+            // Simpan PDF ke storage (mendukung disk lokal maupun S3/R2)
+            if (config('filesystems.default') === 's3') {
+                Storage::disk('s3')->put($path, $pdf->output());
+            } else {
+                $pathDirectory = storage_path('app/public/reports');
+                if (!file_exists($pathDirectory)) {
+                    mkdir($pathDirectory, 0755, true);
+                }
+                $fullPath = storage_path('app/public/' . $path);
+                $pdf->save($fullPath);
             }
-
-            // Simpan PDF ke storage
-            $fullPath = storage_path('app/public/' . $path);
-            $pdf->save($fullPath);
 
             // Set nama dan path_file ke model
             $report->name = $fileName;
@@ -135,15 +137,17 @@ class ReportObserver
                 ])->setPaper('a4', 'portrait');
             }
 
-            // Pastikan folder 'storage/app/public/reports' ada
-            $pathDirectory = storage_path('app/public/reports');
-            if (!file_exists($pathDirectory)) {
-                mkdir($pathDirectory, 0755, true);
+            // Simpan PDF ke storage (mendukung disk lokal maupun S3/R2)
+            if (config('filesystems.default') === 's3') {
+                Storage::disk('s3')->put($path, $pdf->output());
+            } else {
+                $pathDirectory = storage_path('app/public/reports');
+                if (!file_exists($pathDirectory)) {
+                    mkdir($pathDirectory, 0755, true);
+                }
+                $fullPath = storage_path('app/public/' . $path);
+                $pdf->save($fullPath);
             }
-
-            // Simpan PDF ke storage
-            $fullPath = storage_path('app/public/' . $path);
-            $pdf->save($fullPath);
 
     }
 
@@ -152,11 +156,10 @@ class ReportObserver
      */
     public function deleted(Report $report): void
     {
-        // Misal file PDF disimpan di storage/app/public/orders-pdf/{order_number}.pdf
-        $pdfPath = 'public/reports/' . $report->name;
+        $path = 'reports/' . $report->name;
 
-        if (Storage::exists($pdfPath)) {
-            Storage::delete($pdfPath);
+        if (Storage::disk(config('filesystems.default'))->exists($path)) {
+            Storage::disk(config('filesystems.default'))->delete($path);
         }
     }
    

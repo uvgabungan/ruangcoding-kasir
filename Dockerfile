@@ -43,8 +43,8 @@ ENV DB_CONNECTION="sqlite"
 # Copy source code
 COPY . .
 
-# Install dependencies (without dev)
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install dependencies and S3/R2 storage driver
+RUN composer require league/flysystem-aws-s3-v3 --no-dev --no-interaction --optimize-autoloader
 
 # Setup Nginx configuration
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
