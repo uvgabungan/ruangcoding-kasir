@@ -39,6 +39,14 @@ WORKDIR /var/www/html
 # Set default env during build
 ENV APP_KEY="base64:avPjIy5XvwOD7VeojYlezL5BuDjtOXqHvJf/lT47VuE="
 ENV DB_CONNECTION="sqlite"
+ENV FILESYSTEM_DISK="s3"
+ENV AWS_ACCESS_KEY_ID="72234a70cda7637f4c8c979a0f4fa26d"
+ENV AWS_SECRET_ACCESS_KEY="4c3721a5b0f4a747d127da9a5d7ee0b10f6292931aaa875668e881712bfa5cc1"
+ENV AWS_DEFAULT_REGION="us-east-1"
+ENV AWS_BUCKET="kasir-storage"
+ENV AWS_URL="https://pub-929c060eb04f4e5396ff48eb59c53f4f.r2.dev"
+ENV AWS_ENDPOINT="https://d2ebaace9dce0f041a800a3a16a396a6.r2.cloudflarestorage.com"
+ENV AWS_USE_PATH_STYLE_ENDPOINT="true"
 
 # Copy source code
 COPY . .
