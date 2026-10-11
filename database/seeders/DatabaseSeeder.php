@@ -34,8 +34,5 @@ class DatabaseSeeder extends Seeder
             $this->call(CategorySeeder::class);
         }
 
-        if (Product::count() === 0) {
-            $this->call(ProductSeeder::class);
-        }
-    }
+        $this->call(OutdoorProductSeeder::class);
 }
