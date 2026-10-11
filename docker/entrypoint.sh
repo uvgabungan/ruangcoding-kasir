@@ -3,7 +3,7 @@ set -e
 
 # Generate .env dynamically so Laravel Dotenv and PHP-FPM always have the Cloudflare R2 credentials
 cat <<EOF > /var/www/html/.env
-APP_NAME="${APP_NAME:-Kasir Ruang Coding}"
+APP_NAME="${APP_NAME:-GoKasir}"
 APP_ENV="${APP_ENV:-production}"
 APP_KEY="${APP_KEY:-base64:avPjIy5XvwOD7VeojYlezL5BuDjtOXqHvJf/lT47VuE=}"
 APP_DEBUG="${APP_DEBUG:-true}"

@@ -7,7 +7,7 @@ services:
     branch: main
     envVars:
       - key: APP_NAME
-        value: Kasir Ruang Coding
+        value: GoKasir
       - key: APP_ENV
         value: production
       - key: APP_KEY
