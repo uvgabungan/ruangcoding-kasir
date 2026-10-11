@@ -18,7 +18,7 @@ class ReportObserver
      */
     public function creating(Report $report): void
     {       
-            $logo = Setting::first()->logo;
+            $logo = Setting::first()?->logo;
             $today = now()->format('Ymd');
             $countToday = Report::whereDate('created_at', today())
             ->count() + 1;
@@ -91,7 +91,7 @@ class ReportObserver
      */
     public function updated(Report $report): void
     {
-            $logo = Setting::first()->logo;
+            $logo = Setting::first()?->logo;
             // Buat nama file dan path
             $path = 'reports/' . $report->name;
 

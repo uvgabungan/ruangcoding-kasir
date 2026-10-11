@@ -72,9 +72,11 @@
 <body>
 
     <header>
+        @if(!empty($logo) && file_exists(storage_path('app/public/' . $logo)))
         <div id="logo">
-            <img src="{{ storage_path('app/public/' . $logo) }}" alt="{{ asset('storage/' . $logo) }}">
+            <img src="{{ storage_path('app/public/' . $logo) }}" alt="Logo">
         </div>
+        @endif
         <h1>Laporan Uang Keluar<br><span>{{ '(' . $fileName . ')' }}</span></h1>
     </header>
 
