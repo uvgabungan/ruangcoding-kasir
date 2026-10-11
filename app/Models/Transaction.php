@@ -12,7 +12,7 @@ class Transaction extends Model
 
     protected $fillable = [
         'payment_method_id', 'transaction_number', 'name', 'email', 'phone',
-        'address', 'notes', 'total', 'cash_received', 'change'
+        'address', 'notes', 'rental_duration', 'total', 'cash_received', 'change'
     ];
 
     public function transactionItems()

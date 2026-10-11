@@ -35,6 +35,7 @@ class Pos extends Component implements HasForms
     public $payment_methods;
     public $order_items = [];
     public $total_price = 0;
+    public int $rental_duration = 1;
     public $cash_received;
     public $change;
     public $showConfirmationModal = false;
@@ -54,12 +55,93 @@ class Pos extends Component implements HasForms
         $this->categories = collect([['id' => null, 'name' => 'Semua']])->merge(Category::all());
 
         // Jika session 'orderItems' ada, maka ambil data nya dan simpan ke dalam property $order_items
-        // Session 'orderItems' digunakan untuk menyimpan data order sementara sebelum di checkout
         if (session()->has('orderItems')) {
             $this->order_items = session('orderItems');
         }
 
+        if (session()->has('rental_duration')) {
+            $this->rental_duration = max(1, (int) session('rental_duration'));
+        }
+
         $this->payment_methods = PaymentMethod::all();
+    }
+
+    public function getTotalUnits(): int
+    {
+        return (int) collect($this->order_items)->sum('quantity');
+    }
+
+    public function getSubtotalPerDay(): int
+    {
+        $subtotal = 0;
+        foreach ($this->order_items as $item) {
+            $subtotal += ($item['quantity'] ?? 1) * ($item['price'] ?? 0);
+        }
+        return $subtotal;
+    }
+
+    public function setDuration(int $days)
+    {
+        $this->rental_duration = max(1, $days);
+        session()->put('rental_duration', $this->rental_duration);
+        $this->syncTotals();
+    }
+
+    public function increaseDuration()
+    {
+        $this->rental_duration++;
+        session()->put('rental_duration', $this->rental_duration);
+        $this->syncTotals();
+    }
+
+    public function decreaseDuration()
+    {
+        if ($this->rental_duration > 1) {
+            $this->rental_duration--;
+            session()->put('rental_duration', $this->rental_duration);
+            $this->syncTotals();
+        }
+    }
+
+    public function updatedRentalDuration($val = null)
+    {
+        $this->rental_duration = max(1, (int) $this->rental_duration);
+        session()->put('rental_duration', $this->rental_duration);
+        $this->syncTotals();
+    }
+
+    public function setExactCash()
+    {
+        $this->cash_received = $this->calculateTotal();
+        $this->change = 0;
+    }
+
+    public function syncTotals()
+    {
+        $total = $this->calculateTotal();
+        if ($this->payment_method_id) {
+            $pm = PaymentMethod::find($this->payment_method_id);
+            if ($pm && !$pm->is_cash) {
+                $this->cash_received = $total;
+                $this->change = 0;
+            } elseif ($this->cash_received > 0) {
+                $this->change = (int) $this->cash_received - (int) $total;
+            }
+        }
+    }
+
+    public function openCheckout()
+    {
+        if (empty($this->order_items)) {
+            Notification::make()
+                ->title('Keranjang masih kosong')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        $this->calculateTotal();
+        $this->showCheckoutModal = true;
     }
 
     public function render()
@@ -81,15 +163,42 @@ class Pos extends Component implements HasForms
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Pesanan')
+                Forms\Components\Section::make('Informasi Pesanan & Pembayaran')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
                             ->default(fn() => $this->name)
-                            ->label('Name Customer')
+                            ->label('Nama Penyewa / Customer')
                             ->nullable()
                             ->maxLength(255)
                             ->columnSpan(1),
+
+                        Forms\Components\TextInput::make('rental_duration')
+                            ->required()
+                            ->numeric()
+                            ->minValue(1)
+                            ->label('Durasi Sewa')
+                            ->suffix('Hari')
+                            ->default(fn() => $this->rental_duration ?? 1)
+                            ->columnSpan(1)
+                            ->reactive()
+                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                $duration = max(1, (int) ($state ?? 1));
+                                $this->rental_duration = $duration;
+                                session()->put('rental_duration', $duration);
+                                $total = $this->calculateTotal();
+                                $set('total_price', $total);
+
+                                if (!$get('is_cash')) {
+                                    $set('cash_received', $total);
+                                    $set('change', 0);
+                                } else {
+                                    $paid = (int) ($get('cash_received') ?? 0);
+                                    if ($paid > 0) {
+                                        $set('change', $paid - $total);
+                                    }
+                                }
+                            }),
 
                         Forms\Components\TextInput::make('total_price')
                             ->hidden()
@@ -99,9 +208,9 @@ class Pos extends Component implements HasForms
                         Forms\Components\Select::make('payment_method_id')
                             ->required()
                             ->label('Metode Pembayaran')
-                            ->placeholder('Pilih')
+                            ->placeholder('Pilih metode')
                             ->options($this->payment_methods->pluck('name', 'id'))
-                            ->columnSpan(1)
+                            ->columnSpan(2)
                             ->reactive()
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                 $paymentMethod = PaymentMethod::find($state);
@@ -110,7 +219,7 @@ class Pos extends Component implements HasForms
 
                                 if (!$isCash) {
                                     $set('change', 0);
-                                    $set('cash_received', $get('total_price') ?? 0);
+                                    $set('cash_received', $this->calculateTotal());
                                 }
                             })
                             ->afterStateHydrated(function (Forms\Set $set, Forms\Get $get, $state) {
@@ -118,7 +227,7 @@ class Pos extends Component implements HasForms
                                 $isCash = $paymentMethod?->is_cash ?? false;
 
                                 if (!$isCash) {
-                                    $set('cash_received', $get('total_price') ?? 0);
+                                    $set('cash_received', $this->calculateTotal());
                                     $set('change', 0);
                                 }
 
@@ -133,9 +242,10 @@ class Pos extends Component implements HasForms
                             ->reactive()
                             ->prefix('Rp')
                             ->label('Nominal Bayar')
+                            ->columnSpan(1)
                             ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
                                 $paid = (int) ($state ?? 0);
-                                $total = (int) ($get('total_price') ?? 0);
+                                $total = (int) ($this->calculateTotal());
                                 $set('change', $paid - $total);
                             }),
 
@@ -144,8 +254,9 @@ class Pos extends Component implements HasForms
                             ->numeric()
                             ->prefix('Rp')
                             ->label('Kembalian')
+                            ->columnSpan(1)
                             ->readOnly(),
-                    ])
+                    ])->columns(2)
             ]);
     }
 
@@ -296,33 +407,26 @@ class Pos extends Component implements HasForms
         session()->put('orderItems', $this->order_items);
     }
 
-    public function calculateTotal()
+    public function calculateTotal(): int
     {
-        // Inisialisasi total harga
-        $total = 0;
-
-        // Loop setiap item yang ada di cart
-        foreach ($this->order_items as $item) {
-            // Tambahkan harga setiap item ke total
-            $total += $item['quantity'] * $item['price'];
-        }
-
-        // Simpan total harga di property $total_price
+        $duration = max(1, (int) ($this->rental_duration ?? 1));
+        $total = $this->getSubtotalPerDay() * $duration;
         $this->total_price = $total;
-
-        // Return total harga
         return $total;
     }
 
     public function resetOrder()
     {
         // Hapus semua session terkait
-        session()->forget(['orderItems', 'name', 'payment_method_id']);
+        session()->forget(['orderItems', 'name', 'payment_method_id', 'rental_duration']);
 
         // Reset variabel Livewire
         $this->order_items = [];
         $this->payment_method_id = null;
         $this->total_price = 0;
+        $this->rental_duration = 1;
+        $this->cash_received = 0;
+        $this->change = 0;
     }
 
 
@@ -343,47 +447,57 @@ class Pos extends Component implements HasForms
                 ->send();
             
             $this->showCheckoutModal = false;
-        } else {
-            $order = Transaction::create([
-                'payment_method_id' => $payment_method_id_temp,
-                'transaction_number' => TransactionHelper::generateUniqueTrxId(),
-                'name' => $this->name,
-                'total' => $this->total_price,
-                'cash_received' => $this->cash_received,
-                'change' => $this->change,
-            ]);
-            foreach ($this->order_items as $item) {
-                TransactionItem::create([
-                    'transaction_id' => $order->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'cost_price' => $item['cost_price'],
-                    'total_profit' => $item['total_profit'] * $item['quantity'],
-                ]);
-            }
-            // Simpan ID order untuk cetak
-            $this->orderToPrint = $order->id;
-
-            // Tampilkan modal konfirmasi
-            $this->showConfirmationModal = true;
-            $this->showCheckoutModal = false;
-
-            Notification::make()
-                ->title('Order berhasil disimpan')
-                ->success()
-                ->send();
-
-            $this->name = 'umum';
-            $this->payment_method_id = null;
-            $this->total_price = 0;
-            $this->cash_received = 0;
-            $this->change = 0;
-            $this->order_items = [];
-            session()->forget(['orderItems']);
-
-            
+            return;
         }
+
+        $duration = max(1, (int) ($this->rental_duration ?? 1));
+        $totalUnits = $this->getTotalUnits();
+        $this->calculateTotal();
+
+        $notes = "Durasi Sewa: {$duration} Hari | Jumlah Unit: {$totalUnits} Unit";
+
+        $order = Transaction::create([
+            'payment_method_id' => $payment_method_id_temp,
+            'transaction_number' => TransactionHelper::generateUniqueTrxId(),
+            'name' => $this->name ?? 'Umum',
+            'notes' => $notes,
+            'rental_duration' => $duration,
+            'total' => $this->total_price,
+            'cash_received' => $this->cash_received ?? $this->total_price,
+            'change' => $this->change ?? 0,
+        ]);
+
+        foreach ($this->order_items as $item) {
+            TransactionItem::create([
+                'transaction_id' => $order->id,
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'price' => $item['price'],
+                'cost_price' => $item['cost_price'],
+                'total_profit' => ($item['total_profit'] * $item['quantity']) * $duration,
+            ]);
+        }
+
+        // Simpan ID order untuk cetak
+        $this->orderToPrint = $order->id;
+
+        // Tampilkan modal konfirmasi
+        $this->showConfirmationModal = true;
+        $this->showCheckoutModal = false;
+
+        Notification::make()
+            ->title('Order sewa berhasil disimpan')
+            ->success()
+            ->send();
+
+        $this->name = 'Umum';
+        $this->payment_method_id = null;
+        $this->total_price = 0;
+        $this->rental_duration = 1;
+        $this->cash_received = 0;
+        $this->change = 0;
+        $this->order_items = [];
+        session()->forget(['orderItems', 'rental_duration']);
     }
 
 

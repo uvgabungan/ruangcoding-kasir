@@ -168,6 +168,11 @@ class TransactionResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Pemesan')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Info Sewa & Unit')
+                    ->badge()
+                    ->color('info')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total Harga')
                     ->prefix('Rp ')
@@ -381,7 +386,12 @@ class TransactionResource extends Resource implements HasShieldPermissions
                     ->badge()
                     ->color('primary')
                     ->weight(FontWeight::Bold),
-            ])->columns(4);
+                TextEntry::make('notes')
+                    ->label('Info Sewa & Unit:')
+                    ->badge()
+                    ->color('info')
+                    ->weight(FontWeight::Bold),
+            ])->columns(5);
     }
 
     public static function getRelations(): array

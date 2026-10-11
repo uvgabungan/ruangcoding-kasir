@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
             $table->text('notes')->nullable();
+            $table->integer('rental_duration')->default(1);
             $table->integer('total');
             $table->integer('cash_received');
             $table->integer('change');

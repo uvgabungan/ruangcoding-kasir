@@ -76,24 +76,24 @@ class DirectPrintService
             // Detail Transaksi
             $printer->setJustification(Printer::JUSTIFY_LEFT); 
             $printer->text("No.Transaksi: " . $order->transaction_number . "\n");
+            $printer->text("Pelanggan: " . ($order->name ?: 'Umum') . "\n");
             $printer->text("Pembayaran: " . $order->paymentMethod->name . "\n");
+            if (!empty($order->notes)) {
+                $printer->text($order->notes . "\n");
+            }
             $printer->text("Tanggal: " . $order->created_at->format('d-m-Y H:i:s') . "\n");
             $printer->text("================================\n");
-            $printer->text(formatRow("Nama Barang", "Qty", "Harga", $lineWidth) . "\n");
+            $printer->text(formatRow("Nama Barang", "Unit", "Harga/hr", $lineWidth) . "\n");
             $printer->text("--------------------------------\n");
             foreach ($order_items as $item) {
                 $product = Product::find( $item->product_id);
-                $printer->text(formatRow($product->name ,$item->quantity , number_format($item->price), $lineWidth) . "\n");
+                $printer->text(formatRow($product->name ,$item->quantity . ' Unit' , number_format($item->price), $lineWidth) . "\n");
             }
 
             $printer->text("--------------------------------\n");
 
-            $total = 0;
-            foreach($order_items as $item) {
-                $total += $item->quantity * $item->price;
-            }
             $printer->setEmphasis(true); // Tebal
-            $printer->text(formatRow("Total","",number_format($total), $lineWidth) . "\n");
+            $printer->text(formatRow("Total Sewa","",number_format($order->total), $lineWidth) . "\n");
             $printer->text(formatRow("Nominal Bayar","",number_format($order->cash_received), $lineWidth) . "\n");
             $printer->text(formatRow("Kembalian","",number_format($order->change), $lineWidth) . "\n");
             $printer->setEmphasis(false); // Tebal

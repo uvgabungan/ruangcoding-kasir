@@ -75,20 +75,22 @@ async function printThermalReceipt(data) {
 
         // Detail Transaksi
         receipt += "Kode Transaksi: " + data.order.transaction_number + "\n";
+        receipt += "Pelanggan: " + (data.order.name || "Umum") + "\n";
         receipt += "Pembayaran: " + data.order.payment_method.name + "\n";
+        if (data.order.notes) {
+            receipt += data.order.notes + "\n";
+        }
         receipt += "Tanggal: " + data.date + "\n";
         receipt += "================================\n";
-        receipt += formatRow("Nama Barang", "Qty", "Harga") + "\n";
+        receipt += formatRow("Nama Barang", "Unit", "Harga/hr") + "\n";
         receipt += "--------------------------------\n";
 
-        let total = 0;
         data.items.forEach(item => {
-            receipt += formatRow(item.product.name, item.quantity, formatRibuan(item.product.price)) + "\n";
-            total += item.quantity * item.product.price;
+            receipt += formatRow(item.product.name, item.quantity + " Unit", formatRibuan(item.product.price)) + "\n";
         });
 
         receipt += "--------------------------------\n";
-        receipt += formatRow("Total", "", formatRibuan(total)) + "\n";
+        receipt += formatRow("Total Sewa", "", formatRibuan(data.order.total || total)) + "\n";
         receipt += formatRow("Nominal Bayar", "", formatRibuan(data.order.cash_received)) + "\n";
         receipt += formatRow("Kembalian", "", formatRibuan(data.order.change)) + "\n";
         receipt += "================================\n";
