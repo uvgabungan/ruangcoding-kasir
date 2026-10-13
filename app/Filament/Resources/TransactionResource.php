@@ -177,9 +177,9 @@ class TransactionResource extends Resource implements HasShieldPermissions
                     ->label('Total Harga')
                     ->prefix('Rp ')
                     ->numeric(),
-                Tables\Columns\BadgeColumn::make('paymentMethod.name')
+                Tables\Columns\TextColumn::make('paymentMethod.name')
                     ->label('Pembayaran')
-                    ->numeric(),
+                    ->badge(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -209,7 +209,7 @@ class TransactionResource extends Resource implements HasShieldPermissions
             ->actions([
                 Tables\Actions\Action::make('PrintBluetooth')
                     ->label('Cetak')
-                    ->hidden(fn() => Setting::first()->value('print_via_bluetooth') == false) // Ambil nilai dari model lain
+                    ->hidden(fn() => (Setting::first()?->print_via_bluetooth ?? 0) != 1)
                     ->action(function ($record, $livewire) {
                         $order = Transaction::with(['paymentMethod', 'transactionItems.product'])->findOrFail($record->id);
                         $items = $order->transactionItems;
@@ -221,7 +221,7 @@ class TransactionResource extends Resource implements HasShieldPermissions
                     ->color('amber'),
                 Tables\Actions\Action::make('Print')
                     ->label('Cetak')
-                    ->hidden(fn() => Setting::first()->value('print_via_bluetooth')) // Ambil nilai dari model lain
+                    ->hidden(fn() => (Setting::first()?->print_via_bluetooth ?? 0) == 1)
                     ->action(function (Transaction $record) {
                         $directPrint = app(DirectPrintService::class);
                         $directPrint->print($record->id);
@@ -348,7 +348,7 @@ class TransactionResource extends Resource implements HasShieldPermissions
                     return !$product || $product->trashed();
                 });
 
-            if ($invalidProducts->isEmpty()) {
+            if ($invalidProducts->isNotEmpty()) {
                 Notification::make()
                     ->title('Tidak dapat menyimpan')
                     ->body('Ada produk yang telah dihapus dari sistem.')
