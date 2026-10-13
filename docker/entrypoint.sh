@@ -64,9 +64,14 @@ chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/d
 chmod 666 /var/www/html/storage/logs/laravel.log 2>/dev/null || true
 chmod 666 /var/www/html/database/database.sqlite 2>/dev/null || true
 
+# Adjust Nginx port dynamically for Railway ($PORT) or Render/Docker (80)
+PORT="${PORT:-80}"
+sed -i "s/listen 80;/listen ${PORT};/g" /etc/nginx/http.d/default.conf 2>/dev/null || true
+sed -i "s/listen \[::\]:80;/listen [::]:${PORT};/g" /etc/nginx/http.d/default.conf 2>/dev/null || true
+
 # Start php-fpm in background
 php-fpm -D
 
 # Start Nginx in foreground
-echo "Nginx starting on port 80..."
+echo "Nginx starting on port ${PORT}..."
 exec nginx -g "daemon off;"
